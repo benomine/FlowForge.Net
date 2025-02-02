@@ -1,0 +1,12 @@
+<Project>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+        <TestcontainersPackageVersion>4.0.0</TestcontainersPackageVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.1" />
+        <PackageVersion Include="Npgsql" Version="9.0.2" />
+        <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
+    </ItemGroup>
+</Project>
