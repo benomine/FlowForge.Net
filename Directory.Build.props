@@ -1,18 +1,18 @@
 <Project>
     <PropertyGroup>
+        <Authors>Benjamin Nominé</Authors>
         <LangVersion>latest</LangVersion>
-        <PackageProjectUrl>https://github.com/dotnet/aspire</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/benomine/FlowForge.Net</PackageProjectUrl>
         <WarnOnPackingNonPackableProject>false</WarnOnPackingNonPackableProject>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
         <DebugType>embedded</DebugType>
         <DebugSymbols>true</DebugSymbols>
         <StrongNameKeyId>Open</StrongNameKeyId>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UsePublicApiAnalyzers>true</UsePublicApiAnalyzers>
+        <NoWarn>${NoWarn};1591</NoWarn>
     </PropertyGroup>
-
 </Project>

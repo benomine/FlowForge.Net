@@ -2,7 +2,6 @@
 
 namespace FlowForge.Net;
 
-/// <inheritdoc />
 public class NpgsqlJobStepRepository : IJobStepRepository
 {
     private readonly NpgsqlDataSource? _dataSource;
@@ -12,24 +11,21 @@ public class NpgsqlJobStepRepository : IJobStepRepository
         
     }
 
-    /// <inheritdoc cref="NpgsqlJobStepRepository" />
     public NpgsqlJobStepRepository(string connectionString)
     {
         _dataSource = new NpgsqlDataSourceBuilder(connectionString).Build();
     }
     
-    /// <inheritdoc cref="NpgsqlJobStepRepository"/>
     public NpgsqlJobStepRepository(NpgsqlDataSource? dataSource)
     {
         _dataSource = dataSource;
     }
     
-    /// <inheritdoc />
-    public virtual int SaveStep(IStep step)
+    public async Task<int> SaveStepAsync(Step step)
     {
-        using var connection = _dataSource!.CreateConnection();
+        await using var connection = _dataSource!.CreateConnection();
         connection.Open();
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText =
             """
               INSERT INTO Steps (JobId, StepId, Name, Status, StartTime) 
@@ -39,15 +35,14 @@ public class NpgsqlJobStepRepository : IJobStepRepository
         command.Parameters.AddWithValue("StepId", step.StepId);
         command.Parameters.AddWithValue("Name", step.Name);
         command.Parameters.AddWithValue("Status", step.Status.ToString());
-        return command.ExecuteNonQuery();
+        return await command.ExecuteNonQueryAsync();
     }
     
-    /// <inheritdoc />
-    public virtual int UpdateStep(IStep step)
+    public async Task<int> UpdateStepAsync(Step step)
     {
-        using var connection = _dataSource!.CreateConnection();
+        await using var connection = _dataSource!.CreateConnection();
         connection.Open();
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText =
             """
               UPDATE Steps set Status = @Status, Message = @Message, Exception = @Exception, EndTime = @EndTime,
@@ -74,15 +69,14 @@ public class NpgsqlJobStepRepository : IJobStepRepository
         {
             command.Parameters.AddWithValue("Exception", DBNull.Value);
         }
-        return command.ExecuteNonQuery();
+        return await command.ExecuteNonQueryAsync();
     }
 
-    /// <inheritdoc />
-    public List<IStep> GetStepsById<T>(Guid jobId, Guid stepId) where T : IStep, new()
+    public async Task<List<Step>> GetStepsById<T>(Guid jobId, Guid stepId) where T : Step, new()
     {
-        using var connection = _dataSource!.CreateConnection();
+        await using var connection = _dataSource!.CreateConnection();
         connection.Open();
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText =
             """
             SELECT JobId, StepId, Name, Status, CreatedAt, UpdatedAt, StartTime, EndTime, Message, Exception
@@ -90,8 +84,8 @@ public class NpgsqlJobStepRepository : IJobStepRepository
             """;
         command.Parameters.AddWithValue("JobId", jobId);
         command.Parameters.AddWithValue("StepId", stepId);
-        using var reader = command.ExecuteReader();
-        var steps = new List<IStep>();
+        await using var reader = command.ExecuteReader();
+        var steps = new List<Step>();
         while (reader.Read())
         {
             steps.Add(new T
@@ -112,12 +106,11 @@ public class NpgsqlJobStepRepository : IJobStepRepository
         return steps;
     }
 
-    /// <inheritdoc />
-    public List<IStep> GetStepsByName<T>(Guid jobId, string stepName) where T : IStep, new()
+    public async Task<List<Step>> GetStepsByName<T>(Guid jobId, string stepName) where T : Step, new()
     {
-        using var connection = _dataSource!.CreateConnection();
+        await using var connection = _dataSource!.CreateConnection();
         connection.Open();
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText =
             """
             SELECT JobId, StepId, Name, Status, CreatedAt, UpdatedAt, StartTime, EndTime, Message, Exception
@@ -125,8 +118,8 @@ public class NpgsqlJobStepRepository : IJobStepRepository
             """;
         command.Parameters.AddWithValue("JobId", jobId);
         command.Parameters.AddWithValue("Name", stepName);
-        using var reader = command.ExecuteReader();
-        var steps = new List<IStep>();
+        await using var reader = command.ExecuteReader();
+        var steps = new List<Step>();
         while (reader.Read())
         {
             steps.Add(new T
@@ -147,12 +140,11 @@ public class NpgsqlJobStepRepository : IJobStepRepository
         return steps;
     }
 
-    /// <inheritdoc />
-    public void Init()
+    public async Task Init()
     {
-        using var connection = _dataSource!.CreateConnection();
+        await using var connection = _dataSource!.CreateConnection();
         connection.Open();
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText =
             """
             CREATE TABLE IF NOT EXISTS Jobs (
@@ -177,15 +169,14 @@ public class NpgsqlJobStepRepository : IJobStepRepository
                 FOREIGN KEY (JobId) REFERENCES Jobs(JobId)
             );
             """;
-        command.ExecuteNonQuery();
+        await command.ExecuteNonQueryAsync();
     }
 
-    /// <inheritdoc />
-    public void SaveJob(Job job)
+    public async Task<int> SaveJobAsync(Job job)
     {
-        using var connection = _dataSource!.CreateConnection();
+        await using var connection = _dataSource!.CreateConnection();
         connection.Open();
-        using var command = connection.CreateCommand();
+        await using var command = connection.CreateCommand();
         command.CommandText =
             """
             INSERT INTO Jobs (JobId, JobName, Status) VALUES (@JobId, @JobName, @Status)
@@ -193,11 +184,10 @@ public class NpgsqlJobStepRepository : IJobStepRepository
         command.Parameters.AddWithValue("JobId", job.JobId);
         command.Parameters.AddWithValue("JobName", job.JobName);
         command.Parameters.AddWithValue("Status", JobStatus.Started.ToString());
-        command.ExecuteNonQuery();
+        return await command.ExecuteNonQueryAsync();
     }
 
-    /// <inheritdoc />
-    public void UpdateJob(Job job)
+    public async Task<int> UpdateJobAsync(Job job)
     {
         using var connection = _dataSource!.CreateConnection();
         connection.Open();
@@ -208,6 +198,6 @@ public class NpgsqlJobStepRepository : IJobStepRepository
             """;
         command.Parameters.AddWithValue("JobId", job.JobId);
         command.Parameters.AddWithValue("Status", job.Status.ToString());
-        command.ExecuteNonQuery();
+        return await command.ExecuteNonQueryAsync();
     }
 }

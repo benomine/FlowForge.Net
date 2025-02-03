@@ -2,21 +2,16 @@
 
 namespace FlowForge.Net;
 
-/// <inheritdoc />
 public class Job
 {
-    private readonly List<IStep> _steps = [];
+    private readonly List<Step> _steps = [];
     private readonly ILogger<Job> _logger;
-    
-    private IJobStepRepository _repository = null!;
-    /// <inheritdoc />
-    public string JobName = string.Empty;
-    /// <inheritdoc />
-    public Guid JobId { get; set; }
-    /// <inheritdoc />
-    public JobStatus Status { get; private set; } = JobStatus.Started;
 
-    /// <inheritdoc />
+    private IJobStepRepository _repository = null!;
+    public string JobName = string.Empty;
+    public Guid JobId { get; set; }
+    public JobStatus Status { get; set; } = JobStatus.Started;
+
     internal Job(ILogger<Job> logger)
     {
         _logger = logger;
@@ -33,28 +28,28 @@ public class Job
         JobName = jobName;
     }
 
-    /// <inheritdoc />
-    public void Next(IStep step)
+    public void Next(Step step)
     {
         _steps.Add(step);
     }
 
-    /// <inheritdoc />
-    public void Execute()
+    public async Task ExecuteAsync()
     {
         if (Status is JobStatus.Started)
-            _repository.SaveJob(this);
+        {
+            await _repository.SaveJobAsync(this);
+        }
 
         foreach (var step in _steps)
         {
-            _repository.SaveStep(step);
+            await _repository.SaveStepAsync(step);
 
-            _logger.LogInformation("Executing step {Name}", step.Name);
+            _logger.LogInformation("Executing step {Name} {StepId}", step.Name, step.StepId);
             step.CreatedAt = DateTimeOffset.UtcNow;
             step.Status = StepStatus.InProgress;
-            
-            _repository.UpdateStep(step);
-            ExecuteStep(step);
+
+            await _repository.UpdateStepAsync(step);
+            await ExecuteStep(step);
         }
 
         if (_steps.Any(x => x.StepResult?.Status is StepStatus.Failed or StepStatus.Invalid))
@@ -65,47 +60,47 @@ public class Job
         {
             Status = JobStatus.Finished;
         }
-        
-        _repository.UpdateJob(this);
+
+        await _repository.UpdateJobAsync(this);
     }
-    
-    private void ExecuteStep(IStep step)
+
+    private async Task ExecuteStep(Step step)
     {
         try
         {
-            var result = step.Execute();
-            _logger.LogInformation("Executed step {Name}", step.Name);
-                
+            var result = await step.ExecuteAsync();
+            _logger.LogInformation("Executed step {Name} {StepId}", step.Name, step.StepId);
+
             switch (result.Status)
             {
                 case StepStatus.Completed:
-                    _logger.LogInformation("Step {Name} succeeded.", step.Name);
+                    _logger.LogInformation("Step {Name} {StepId} succeeded.", step.Name, step.StepId);
                     step.EndTime = DateTimeOffset.UtcNow;
                     step.Status = StepStatus.Completed;
                     break;
                 case StepStatus.Failed:
-                {
-                    if (result.Exception is not null)
                     {
-                        _logger.LogError(result.Exception, "Step {Name} failed.", step.Name);
-                        step.Message = result.Message;
-                        step.Exception = result.Exception.Message;
+                        if (result.Exception is not null)
+                        {
+                            _logger.LogError(result.Exception, "Step {Name} {StepId} failed.", step.Name, step.StepId);
+                            step.Message = result.Message;
+                            step.Exception = result.Exception.Message;
+                        }
+                        else
+                        {
+                            _logger.LogError("Step {Name} {StepId} failed.", step.Name, step.StepId);
+                        }
+
+                        step.Status = StepStatus.Failed;
+                        break;
                     }
-                    else
-                    {
-                        _logger.LogError("Step {Name} failed.", step.Name);
-                    }
-                        
-                    step.Status = StepStatus.Failed;
-                    break;
-                }
                 case StepStatus.Invalid:
-                    _logger.LogError("Step {Name} in invalid state.", step.Name);
+                    _logger.LogError("Step {Name} {StepId} in invalid state.", step.Name, step.StepId);
                     step.Status = StepStatus.Invalid;
                     break;
             }
-                
-            _repository.UpdateStep(step);
+
+            await _repository.UpdateStepAsync(step);
         }
         catch (Exception e)
         {
@@ -113,14 +108,13 @@ public class Job
             step.Status = StepStatus.Failed;
             step.Message = stepResult.Message;
             step.Exception = stepResult.Exception!.Message;
-            _repository.UpdateStep(step);
+            await _repository.UpdateStepAsync(step);
         }
     }
 
-    /// <inheritdoc />
-    public void ReplayStep<T>(string stepName) where T : IStep, new()
+    public async Task ReplayStep<T>(string stepName) where T : Step, new()
     {
-        var steps = _repository.GetStepsByName<T>(JobId, stepName);
+        var steps = await _repository.GetStepsByName<T>(JobId, stepName);
         if (steps.Count == 0)
         {
             _logger.LogError("Unknown step {StepName} for job {JobId}.", stepName, JobId);
@@ -130,22 +124,21 @@ public class Job
         var stepInstance = steps.First();
         stepInstance.StartTime = DateTimeOffset.UtcNow;
         stepInstance.Status = StepStatus.InProgress;
-        ExecuteStep(stepInstance);
+        await ExecuteStep(stepInstance);
     }
 
-    /// <inheritdoc />
-    public void ReplayStep<T>(Guid stepId) where T : IStep, new()
+    public async Task ReplayStep<T>(Guid stepId) where T : Step, new()
     {
-        var steps = _repository.GetStepsById<T>(JobId, stepId);
+        var steps = await _repository.GetStepsById<T>(JobId, stepId);
         if (steps.Count == 0)
         {
             _logger.LogError("Unknown step {StepId} for job {JobId}.", stepId, JobId);
             return;
         }
-       
+
         var stepInstance = steps.First();
         stepInstance.StartTime = DateTimeOffset.UtcNow;
         stepInstance.Status = StepStatus.InProgress;
-        ExecuteStep(stepInstance);
+        await ExecuteStep(stepInstance);
     }
 }

@@ -1,19 +1,16 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace FlowForge.Net;
 
-/// <inheritdoc />
 public class JobBuilder
 {
-    private readonly List<IStep> _steps;
+    private readonly List<Step> _steps;
     private IJobStepRepository? _repository;
     private readonly ILogger<Job> _logger;
-    private IStep? _firstStep;
-    private Guid _jobId;
+    private readonly Guid _jobId;
     private string? _jobName;
-    
-    /// <inheritdoc />
+    private Step? _firstStep;
+
     public JobBuilder(ILogger<Job> logger)
     {
         _logger = logger;
@@ -21,23 +18,21 @@ public class JobBuilder
         _jobId = Guid.CreateVersion7();
     }
 
-    /// <inheritdoc />
     public void ConfigureRepository(IJobStepRepository repository)
     {
         _repository = repository;
     }
     
-    /// <inheritdoc />
-    public JobBuilder Next(IStep step)
+    public JobBuilder Next(Step step)
     {
         step.JobId = _jobId;
         step.Status = StepStatus.Pending;
+        step.StepId = Guid.CreateVersion7();
         _steps.Add(step);
         return this;
     }
 
-    /// <inheritdoc />
-    public JobBuilder StartWith(IStep step)
+    public JobBuilder StartWith(Step step)
     {
         if (_firstStep is not null)
         {
@@ -47,17 +42,16 @@ public class JobBuilder
         _firstStep = step;
         _firstStep.JobId = _jobId;
         _firstStep.Status = StepStatus.Pending;
+        _firstStep.StepId = Guid.CreateVersion7();
         return this;
     }
 
-    /// <inheritdoc />
     public JobBuilder WithName(string name)
     {
         _jobName = name;
         return this;
     }
 
-    /// <inheritdoc />
     public Job Build()
     {
         ArgumentNullException.ThrowIfNull(_repository);

@@ -8,8 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
-      <PackageReference Include="Npgsql" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FlowForge.Net\FlowForge.Net.csproj" />
     </ItemGroup>
 
 </Project>

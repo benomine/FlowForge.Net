@@ -11,7 +11,7 @@ var provider = services.BuildServiceProvider();
 var jobBuilder = provider.GetRequiredService<JobBuilder>();
 
 jobBuilder.ConfigureRepository(
-    new NpgsqlJobStepRepository("Server=127.0.0.1;Port=5432;Database=test;User Id=test;Password=test;"));
+    new NpgsqlJobStepRepository("Server=127.0.0.1;Port=5432;Database=test;User Id=test;Password=test;Include Error Detail=true"));
 var job = jobBuilder
     .WithName("SampleJob")
     .Next(new SimpleStep("1"))
@@ -20,13 +20,13 @@ var job = jobBuilder
     .Next(new SimpleStep("4"))
     .Build();
 
-job.Execute();
+await job.ExecuteAsync();
 
-internal class SimpleStep : IStep
+internal class SimpleStep : Step
 {
     public SimpleStep()
     {
-        
+        Name = nameof(SimpleStep);
     }
 
     public SimpleStep(string stepName)
@@ -34,23 +34,11 @@ internal class SimpleStep : IStep
         Name = stepName;
     }
     
-    public string Name { get; set; } = "SimpleStep";
-    public DateTimeOffset StartTime { get; set; }
-    public DateTimeOffset EndTime { get; set; }
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
-    public Guid StepId { get; set; } = Guid.CreateVersion7();
-    public Guid JobId { get; set; }
-    public string? Exception { get; set; }
-    public string? Message { get; set; }
-    public StepStatus Status { get; set; }
-    public StepResult? StepResult { get; set; }
-    
-    public StepResult Execute()
+    public new async Task<StepResult> ExecuteAsync()
     {
         var number = Random.Shared.Next(1, 10);
 
-        Task.Delay(number * 500);
+        await Task.Delay(number * 500);
 
         StepResult = number switch
         {
