@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>true</IsPackable>
+        <PackageIcon>favicon.PNG</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,5 +15,7 @@
     <ItemGroup>
       <ProjectReference Include="..\FlowForge.Net\FlowForge.Net.csproj" />
     </ItemGroup>
-
+    <ItemGroup>
+        <None Include="..\..\favicon.PNG" Pack="true" PackagePath="\" />
+    </ItemGroup>
 </Project>

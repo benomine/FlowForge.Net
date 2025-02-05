@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>true</IsPackable>
+        <PackageIcon>favicon.PNG</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,4 +13,7 @@
       <PackageReference Include="Npgsql" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="..\..\favicon.PNG" Pack="true" PackagePath="\" />
+    </ItemGroup>
 </Project>

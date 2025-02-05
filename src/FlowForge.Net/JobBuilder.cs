@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace FlowForge.Net;
 
@@ -18,9 +19,9 @@ public class JobBuilder
         _jobId = Guid.CreateVersion7();
     }
 
-    public void ConfigureRepository(IJobStepRepository repository)
+    public void UseNpgsql(string connectionString)
     {
-        _repository = repository;
+        _repository = new NpgsqlJobStepRepository(connectionString);
     }
     
     public JobBuilder Next(Step step)
